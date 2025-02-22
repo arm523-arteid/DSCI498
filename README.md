@@ -5,3 +5,19 @@ Publicly available real-world datasets and synthetic datasets to simulate trial-
 Objectives:
 Implement AE detection for adverse event monitoring.
 Explore deep learning methods to improve early detection
+
+
+Directory structure:
+1. data/ 
+    raw/:       Original datasets or instructions for access    
+    processed/: Includes cleaned data ready for training
+    synthetic/: datasets generated maintaining the statistical properties from the raw/processed 
+
+2. src/ 
+    python scripts
+
+3. docs/ 
+    Additional documentation 
+
+4. results/
+    Generated plots, metrics & other outputs
