@@ -4,9 +4,11 @@ Reading the data from GoogleDrive
 
 #import necessary packages
 import pandas as pd
+import numpy as np
 import requests
 import io
 
+#Patients dataset
 def load_csv_from_gdrive(file_id):
     # url for GoogleDrive
     url = f"https://drive.google.com/uc?export=download&id={file_id}"
@@ -36,15 +38,51 @@ for state, fid in file_ids.items():
 
 # Combine all DataFrames into one
 df_combined = pd.concat(df_list, ignore_index=True)
-keep_columns = ["Id", "BIRTHDATE", "DEATHDATE", "MARITAL", "RACE", "ETHNICITY", "GENDER", "CITY", "STATE", "COUNTY", "INCOME"]
+
+#Convert BIRTHDATE column to a datetime type
+df_combined["BIRTHDATE"] = pd.to_datetime(df_combined["BIRTHDATE"])
+df_combined["DEATHDATE"] = pd.to_datetime(df_combined["DEATHDATE"])
+df_combined["BIRTHDATE_ORD"] = df_combined["BIRTHDATE"].apply(lambda d: d.toordinal())
+
+#Define a function that calculates age at death
+def calc_age_at_death(row):
+    birth = row["BIRTHDATE"]
+    death = row["DEATHDATE"]
+    if pd.isnull(death):
+        return np.nan
+    return (death - birth).days // 365
+df_combined["AGE_AT_DEATH"] = df_combined.apply(calc_age_at_death, axis=1)
+
+
+keep_columns = ["Id", "BIRTHDATE", "BIRTHDATE_ORD", "DEATHDATE", "AGE_AT_DEATH", "MARITAL", "RACE", "ETHNICITY", "GENDER", "CITY", "STATE", "COUNTY", "INCOME"]
 patients_all = df_combined[keep_columns]
 
 patients_all.to_csv("data/processed/patients_all.csv", index=False)
 
-#explore the combined dataset
-print(df_combined.head())
-rows, cols = df_combined.shape
-print("Number of rows:", rows)
-print("Number of columns:", cols)
-state_counts = df_combined['state'].value_counts()
-print(state_counts)
+#Conditions
+
+# List of States & fileID for conditions
+file_ids = {
+    "PA": "1xeuzrlJ8PeeV_UYAdKuS0-SWZP4iW_zc",
+    "IL": "1697EYEVyhmkFTME7LMkJiMOFeZmapf4q",
+    "FL": "1-HvfZFniBsjbnepdH4apquD3nXeQ8KlQ",
+    "TX": "17zzvVVcXt8uhKr8_h9J-1MeDZAb1C5Pe",
+    "CA": "1k4a4sKSHUyUjR2kQu-lObJC8ggpJ3Y3d"
+}
+# List to store each state's DataFrame
+df_list = []
+# Loop over each state and file_id
+for state, fid in file_ids.items():
+    df_state = load_csv_from_gdrive(fid)
+    df_list.append(df_state)
+# Combine all DataFrames into one
+df_combined = pd.concat(df_list, ignore_index=True)
+
+# Keeping only heart related conditions
+pattern = r"heart|cardio|myocardial|coronary|angina|cardiac"
+df_combined["cvd_flag"] = df_combined["DESCRIPTION"].str.contains(pattern, case=False, na=False)
+
+# Group by PATIENT so that if any condition is True for that patient, the result is True.
+df_patient_flag = df_combined.groupby("PATIENT")["cvd_flag"].any().reset_index()
+
+df_patient_flag.to_csv("data/processed/conditions.csv", index=False)
