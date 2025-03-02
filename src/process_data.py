@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import requests
 import io
+import re
 
 #Patients dataset
 def load_csv_from_gdrive(file_id):
@@ -18,8 +19,9 @@ def load_csv_from_gdrive(file_id):
     csv_data = io.StringIO(response.text)
     df = pd.read_csv(csv_data)
     return df
-
-# List of States & fileID
+##############################################
+# List of States & fileID   (Patients)
+##############################################
 file_ids = {
     "PA": "1HPn-erywYpJgCmGseK7FKmwvcJzjEpTn",
     "IL": "1gn8ox4ugz6-917Myzl6o-rsWwYj5edab",
@@ -59,7 +61,10 @@ patients_all = df_combined[keep_columns]
 
 patients_all.to_csv("data/processed/patients_all.csv", index=False)
 
-#Conditions
+
+##############################################
+# List of States & fileID   (Conditions)
+##############################################
 
 # List of States & fileID for conditions
 file_ids = {
@@ -86,3 +91,113 @@ df_combined["cvd_flag"] = df_combined["DESCRIPTION"].str.contains(pattern, case=
 df_patient_flag = df_combined.groupby("PATIENT")["cvd_flag"].any().reset_index()
 
 df_patient_flag.to_csv("data/processed/conditions.csv", index=False)
+
+##############################################
+# List of States & fileID   (Immunizations)
+##############################################
+
+# List of States & fileID for immunizations
+file_ids = {
+    "PA": "1EJy_BvyLxqnyfa4XNzXPpByXP2u0E2kN",
+    "IL": "1375IiYSHpT0Qc-EG4pWFIBP_x43hvEEp",
+    "FL": "133gl7hPScHwYUL8YDqBK50f6l5JYFBbI",
+    "TX": "16-F55tPQ2v9rLe6L4wwstmfqaY2fDck7",
+    "CA": "1vshSteqa-0RLRjgo4eS-GMHRbeqTs_Vp"
+}
+# List to store each state's DataFrame
+df_list = []
+# Loop over each state and file_id
+for state, fid in file_ids.items():
+    df_state = load_csv_from_gdrive(fid)
+    df_list.append(df_state)
+# Combine all DataFrames into one
+df_combined = pd.concat(df_list, ignore_index=True)
+
+# Keep only the PATIENT and DESCRIPTION columns and drop duplicate rows
+df_immunizations = df_combined[['PATIENT', 'DESCRIPTION']]
+df_immunizations_unique = df_immunizations.drop_duplicates()
+
+df_immunizations_unique.to_csv("data/processed/immunizations.csv", index=False)
+
+##############################################
+# List of States & fileID   (Observations)
+##############################################
+# List of States & fileID for Observations
+file_ids = {
+    "PA": "1-S5akf1qovDo3jPMhAxVxnlZBbyY0oy_",
+    "IL": "1sCpZzIZ6vPYo3lGO2Tglk0oyOt0sAmd3",
+    "FL": "1Kk84FxRkbphPbDbte1yTEJAFr_DkgpQp",
+    "TX": "1KETnD5BOIg38zk8i6rSiN03TD8_KaW3O",
+    "CA": "13yJSIaRvUDCLNPJhYdHL5hBY8watl054"
+}
+# List to store each state's DataFrame
+df_list = []
+# Loop over each state and file_id
+for state, fid in file_ids.items():
+    df_state = load_csv_from_gdrive(fid)
+    df_list.append(df_state)
+# Combine all DataFrames into one
+df_combined = pd.concat(df_list, ignore_index=True)
+df_combined["DATE"] = pd.to_datetime(df_combined["DATE"], errors="coerce")
+# Sort DATE so that the latest record comes last for each group
+df_combined.sort_values("DATE", inplace=True)
+# Group by PATIENT and DESCRIPTION, then keep only the last record in each group
+df_latest = df_combined.groupby(["PATIENT", "DESCRIPTION"], as_index=False).tail(1)
+
+df_latest.to_csv("data/processed/observations.csv", index=False)
+
+##############################################
+# List of States & fileID   (Medications)
+##############################################
+# List of States & fileID for medications
+file_ids = {
+    "PA": "1nZg078K-AmEIkP0g7FQRbYvgrgfavyIp",
+    "IL": "1nvqHDEClnz8ktLWSLCiPgQeHZH-BkzuT",
+    "FL": "1JvcRPYyT5CddZGyqdkqy9GwvH8TkBKMJ",
+    "TX": "1CF34FZMYgq9_ZQH0v9gAGlnqXrm7dk59",
+    "CA": "1u0i-JV53eKeCVNTPuWxtiI4fLHCOFoAN"
+}
+# List to store each state's DataFrame
+df_list = []
+# Loop over each state and file_id
+for state, fid in file_ids.items():
+    df_state = load_csv_from_gdrive(fid)
+    df_list.append(df_state)
+# Combine all DataFrames into one
+df_combined = pd.concat(df_list, ignore_index=True)
+
+# Keep only the PATIENT and DESCRIPTION columns and drop duplicate rows
+df_medications = df_combined[['PATIENT', 'DESCRIPTION']]
+df_medications_unique = df_medications.drop_duplicates()
+
+df_medications_unique.to_csv("data/processed/medications.csv", index=False)
+
+##############################################
+# List of States & fileID   (Allergies)
+##############################################
+# List of States & fileID for medications
+file_ids = {
+    "PA": "1GAIiriodO00hYDDezmoLnbu-pQNkwdqH",
+    "IL": "1ZmsXQH0AxtPQ6fOCf2bUsadgDoSyfjOw",
+    "FL": "1jHxoCcxR9q48aWZ5SCxLlQAarmBiauKi",
+    "TX": "17ric2bfSiyxhdy2tgeLfxySBSLI_ubPN",
+    "CA": "1tCqSQAqPgRhCLv-UFWSzWfJtOpwxFMcB"
+}
+# List to store each state's DataFrame
+df_list = []
+# Loop over each state and file_id
+for state, fid in file_ids.items():
+    df_state = load_csv_from_gdrive(fid)
+    df_list.append(df_state)
+# Combine all DataFrames into one
+df_combined = pd.concat(df_list, ignore_index=True)
+
+# Keep only the PATIENT and DESCRIPTION columns and drop duplicate rows Filter where TYPE equals "allergy"
+# Clean up actual allergies too
+df_allergy_filtered = df_combined[df_combined["TYPE"].str.lower() == "allergy"]
+df_allergy_filtered = df_allergy_filtered[~df_allergy_filtered["DESCRIPTION"].str.contains(r"Allergy to substance \(finding\)", case=False, na=False)]
+df_allergy_filtered["DESCRIPTION"] = df_allergy_filtered["DESCRIPTION"].str.replace(r"\s*\(.*", "", regex=True)
+df_allergies = df_allergy_filtered[['PATIENT', 'DESCRIPTION']]
+df_allergies_unique = df_allergies.drop_duplicates()
+
+df_allergies_unique.to_csv("data/processed/allergies.csv", index=False)
