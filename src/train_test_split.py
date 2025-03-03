@@ -87,6 +87,11 @@ merged_df = merged_df.merge(df_medications_wide, on="PATIENT", how="left")
 merged_df = merged_df.merge(df_immunizations_wide, on="PATIENT", how="left")
 # Merge the conditions dataset
 merged_df = merged_df.merge(conditions, on="PATIENT", how="left")
+
+obs_cols = f_wide_observations.columns.tolist()
+cols_to_fill = [col for col in merged_df.columns if col not in obs_cols]
+merged_df[cols_to_fill] = merged_df[cols_to_fill].fillna(0)
+
 #patients with no record in the conditions dataset, fill cvd_flag with False.
 merged_df["cvd_flag"] = merged_df["cvd_flag"].fillna(False)
 
