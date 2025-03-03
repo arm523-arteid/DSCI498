@@ -13,7 +13,7 @@ Explore deep learning methods to improve detection
 
 Directory structure:
 1. data/ 
-    raw/:       Given size, they reside in a google drive. Link is here. https://drive.google.com/drive/folders/1xOYPyM1YoDv7Rr1yCLnESCy_IQ88I3lh?usp=drive_link   
+    raw/:       Given size, they reside in GoogleDrive. This will remain empty
     processed/: Includes cleaned data ready for training
 
 2. src/ 
@@ -23,4 +23,4 @@ Directory structure:
     Additional documentation 
 
 4. results/
-    Generated plots, metrics & other outputs
+    Generated plots, metrics & other outputs.
